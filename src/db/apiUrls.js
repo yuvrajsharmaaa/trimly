@@ -1,57 +1,67 @@
 import supabase from "./superbase";
 
 export async function getUrls(user_id) {
-  let query = supabase
-    .from("urls")
-    .select("*");
+  try {
+    let query = supabase.from("urls").select("*");
 
-  if (user_id && user_id !== 'guest' && typeof user_id === 'string') {
-    query = query.eq("user_id", user_id);
-  }
+    if (user_id && user_id !== 'guest') {
+      query = query.eq("user_id", user_id);
+    }
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  if (error) {
-    console.error(error);
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching URLs:", error);
     throw new Error("Unable to load URLs");
   }
-
-  return data;
 }
 
-export async function getUrl({ id, user_id }) {
-  const { data, error } = await supabase
-    .from("urls")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user_id)
-    .single();
+export async function getUrl(id) {
+  try {
+    const { data, error } = await supabase
+      .from("urls")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-  if (error) {
-    console.error(error);
-    throw new Error("Short Url not found");
+    if (error) throw error;
+    if (!data) throw new Error("URL not found");
+    
+    return data;
+  } catch (error) {
+    console.error("Error fetching URL:", error);
+    throw new Error("URL not found");
   }
-
-  return data;
 }
 
 export async function getLongUrl(id) {
-  let { data: shortLinkData, error: shortLinkError } = await supabase
-    .from("urls")
-    .select("id, original_url")
-    .or(`short_url.eq.${id},custom_url.eq.${id}`)
-    .single();
+  try {
+    // Try short_url first
+    const { data: shortUrlData, error: shortUrlError } = await supabase
+      .from("urls")
+      .select("*")
+      .eq("short_url", id)
+      .maybeSingle();
 
-  if (shortLinkError) {
-    console.error("Error fetching short link:", shortLinkError);
-    throw new Error("Short URL not found");
+    if (shortUrlData) return shortUrlData;
+
+    // Try custom_url if short_url not found
+    const { data: customUrlData, error: customUrlError } = await supabase
+      .from("urls")
+      .select("*")
+      .eq("custom_url", id)
+      .maybeSingle();
+
+    if (customUrlData) return customUrlData;
+
+    // If neither found, throw error
+    throw new Error("URL not found");
+  } catch (error) {
+    console.error("Error looking up URL:", error);
+    throw new Error("URL not found");
   }
-
-  if (!shortLinkData) {
-    throw new Error("Short URL not found");
-  }
-
-  return shortLinkData;
 }
 
 function dataURLtoBlob(dataurl) {
@@ -103,12 +113,33 @@ export async function createUrl(
 }
 
 export async function deleteUrl(id) {
-  const { data, error } = await supabase.from("urls").delete().eq("id", id);
+  try {
+    const { error } = await supabase
+      .from("urls")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error deleting URL:", error);
+    throw new Error("Unable to delete URL");
+  }
+}
+
+export async function testUrlLookup() {
+  console.log('Testing URL lookup...');
+  
+  // Get all URLs to see what's in the database
+  const { data, error } = await supabase
+    .from("urls")
+    .select("id, original_url, short_url, custom_url, user_id")
+    .limit(10);
 
   if (error) {
-    console.error(error);
-    throw new Error("Unable to delete Url");
+    console.error('Error fetching URLs:', error);
+    return;
   }
 
+  console.log('All URLs in database:', data);
   return data;
 }

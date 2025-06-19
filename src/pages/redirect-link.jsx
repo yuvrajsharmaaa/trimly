@@ -1,37 +1,88 @@
 import { storeClicks } from "@/db/apiClicks";
 import { getLongUrl } from "@/db/apiUrls";
-import useFetch from "@/hooks/use-fetch";
-import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
 
 const RedirectLink = () => {
   const { id } = useParams();
-  const { loading, data, error, fn } = useFetch(getLongUrl, id);
+  const navigate = useNavigate();
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
-    fn();
-  }, []);
+    const redirectToUrl = async () => {
+      if (!id) {
+        setError(new Error("No URL ID provided"));
+        setLoading(false);
+        return;
+      }
 
-  useEffect(() => {
-    if (!loading && data?.original_url) {
-      // Fire-and-forget: store click stats in the background
-      storeClicks({
-        id: data.id,
-        originalUrl: data.original_url,
-      });
+      try {
+        console.log("Looking up URL:", id);
+        setDebugInfo({ stage: 'lookup', id });
+        const data = await getLongUrl(id);
 
-      // Redirect immediately
-      window.location.replace(data.original_url);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, data]);
+        if (!data || !data.original_url) {
+          console.error("No URL found for:", id);
+          setDebugInfo(prev => ({ ...prev, error: 'No URL data found' }));
+          setError(new Error("URL not found"));
+          setLoading(false);
+          return;
+        }
+
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          found: true,
+          originalUrl: data.original_url,
+          shortUrl: data.short_url,
+          customUrl: data.custom_url
+        }));
+
+        // Store click data in the background
+        try {
+          await storeClicks({
+            id: data.id,
+            originalUrl: data.original_url,
+          }).catch(console.error); // Don't block redirect on click storage error
+        } catch (clickError) {
+          console.error("Error storing click:", clickError);
+          setDebugInfo(prev => ({ ...prev, clickError: clickError.message }));
+        }
+
+        // Ensure URL has proper protocol
+        let redirectUrl = data.original_url;
+        if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
+          redirectUrl = 'https://' + redirectUrl;
+        }
+
+        setDebugInfo(prev => ({ ...prev, redirectUrl }));
+
+        // Use window.location.replace for proper redirect
+        window.location.replace(redirectUrl);
+      } catch (err) {
+        console.error("Redirect error:", err);
+        setDebugInfo(prev => ({ ...prev, error: err.message }));
+        setError(err);
+        setLoading(false);
+      }
+    };
+
+    redirectToUrl();
+  }, [id, navigate]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#18181b]">
         <BarLoader width={120} color="#36d7b7" />
         <span className="mt-4 text-white text-base sm:text-lg">Redirecting…</span>
+        <span className="mt-2 text-gray-400 text-sm">Looking up: {id}</span>
+        {debugInfo && (
+          <pre className="mt-4 p-4 bg-gray-800 rounded text-xs text-gray-300 max-w-lg overflow-auto">
+            {JSON.stringify(debugInfo, null, 2)}
+          </pre>
+        )}
       </div>
     );
   }
@@ -40,7 +91,19 @@ const RedirectLink = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#18181b]">
         <span className="text-red-500 text-lg">Error: {error.message}</span>
-        <span className="text-white mt-2">The short URL you're looking for doesn't exist.</span>
+        <span className="text-white mt-2">The URL you're looking for doesn't exist.</span>
+        <span className="text-gray-400 mt-2">ID: {id}</span>
+        {debugInfo && (
+          <pre className="mt-4 p-4 bg-gray-800 rounded text-xs text-gray-300 max-w-lg overflow-auto">
+            {JSON.stringify(debugInfo, null, 2)}
+          </pre>
+        )}
+        <button 
+          onClick={() => navigate('/')} 
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Go Home
+        </button>
       </div>
     );
   }

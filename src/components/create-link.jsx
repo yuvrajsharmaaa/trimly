@@ -8,21 +8,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Error from "./error";
 import * as yup from "yup";
 import { BeatLoader } from "react-spinners";
 import { UrlState } from "@/context";
 import supabase from "@/db/superbase";
+import QRCode from "qrcode";
 
 export function CreateLink() {
-  const { user, isGuest } = UrlState();
+  const { user } = UrlState();
   const navigate = useNavigate();
-
-  let [searchParams, setSearchParams] = useSearchParams();
-  const longLink = searchParams.get("createNew");
-
+  const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [formValues, setFormValues] = useState({
@@ -30,30 +28,52 @@ export function CreateLink() {
     customUrl: "",
   });
 
-  // Handle longLink param change
-  useEffect(() => {
-    if (longLink) {
-      setFormValues(prev => ({
-        ...prev,
-        longUrl: longLink
-      }));
-    }
-  }, [longLink]);
-
   const schema = yup.object().shape({
     longUrl: yup
       .string()
+      .trim()
       .url("Must be a valid URL")
       .required("Long URL is required"),
-    customUrl: yup.string(),
+    customUrl: yup
+      .string()
+      .trim()
+      .matches(/^[a-zA-Z0-9-_]*$/, "Only letters, numbers, hyphens and underscores are allowed")
+      .min(3, "Custom URL must be at least 3 characters")
+      .max(20, "Custom URL must be less than 20 characters")
+      .nullable()
+      .transform((value) => (value === "" ? null : value)),
   });
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { id, value } = e.target;
-    setFormValues(prev => ({
+    setFormValues((prev) => ({
       ...prev,
-      [id]: value
+      [id]: value || "",
     }));
+    // Clear error when user starts typing
+    if (errors[id]) {
+      setErrors((prev) => ({
+        ...prev,
+        [id]: null,
+      }));
+    }
+  };
+
+  const generateQRCode = async (url) => {
+    try {
+      const qrDataUrl = await QRCode.toDataURL(url, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      });
+      return qrDataUrl;
+    } catch (err) {
+      console.error('Error generating QR code:', err);
+      return null;
+    }
   };
 
   const createNewLink = async () => {
@@ -61,34 +81,48 @@ export function CreateLink() {
     setLoading(true);
     try {
       // Validate form data
-      await schema.validate(formValues, { abortEarly: false });
+      const validatedData = await schema.validate(formValues, { abortEarly: false });
 
       // Create the short URL
-      const shortUrl = formValues.customUrl || Math.random().toString(36).substr(2, 6);
+      const shortUrl = validatedData.customUrl || Math.random().toString(36).substring(2, 6);
       
+      // Ensure the long URL has a protocol
+      let originalUrl = validatedData.longUrl;
+      if (!originalUrl.startsWith('http://') && !originalUrl.startsWith('https://')) {
+        originalUrl = 'https://' + originalUrl;
+      }
+
+      // Generate QR code
+      const shortUrlFull = `${window.location.origin}/${shortUrl}`;
+      const qrCode = await generateQRCode(shortUrlFull);
+
       // Insert into Supabase
       const { data, error } = await supabase
         .from('urls')
         .insert({
-          user_id: isGuest ? 'guest' : user?.id,
-          original_url: formValues.longUrl,
+          user_id: user?.id || null,
+          original_url: originalUrl,
           short_url: shortUrl,
-          custom_url: formValues.customUrl || null
+          custom_url: validatedData.customUrl,
+          qr_code: qrCode
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        setErrors({ message: error.message || 'Failed to create link' });
+        console.error('Error creating link:', error);
+        if (error.code === '23505') {
+          setErrors({ customUrl: 'This custom URL is already taken. Please try another one.' });
+        } else {
+          setErrors({ message: error.message || 'Failed to create link' });
+        }
         return;
       }
 
-      if (data) {
-        navigate(`/link/${data.id}`);
-      }
+      setOpen(false);
+      navigate(`/link/${data.id}`);
     } catch (err) {
-      console.error('Error creating link:', err);
+      console.error('Validation error:', err);
       if (err.inner) {
         // Yup validation errors
         const validationErrors = {};
@@ -97,7 +131,6 @@ export function CreateLink() {
         });
         setErrors(validationErrors);
       } else {
-        // Other errors
         setErrors({ message: err.message || 'Failed to create link' });
       }
     } finally {
@@ -106,12 +139,7 @@ export function CreateLink() {
   };
 
   return (
-    <Dialog
-      defaultOpen={!!longLink}
-      onOpenChange={(res) => {
-        if (!res) setSearchParams({});
-      }}
-    >
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="destructive">Create New Link</Button>
       </DialogTrigger>
@@ -120,21 +148,32 @@ export function CreateLink() {
           <DialogTitle className="font-bold text-2xl">Create New</DialogTitle>
         </DialogHeader>
 
-        <Input
-          id="longUrl"
-          placeholder="Enter your Long URL"
-          value={formValues.longUrl || ""}
-          onChange={handleChange}
-        />
-        {errors.longUrl && <Error message={errors.longUrl} />}
-        
-        <Input
-          id="customUrl"
-          placeholder="Custom short URL (optional)"
-          value={formValues.customUrl || ""}
-          onChange={handleChange}
-        />
+        <div className="space-y-4">
+          <div>
+            <Input
+              id="longUrl"
+              placeholder="Enter your Long URL"
+              value={formValues.longUrl}
+              onChange={handleInputChange}
+              className={errors.longUrl ? "border-red-500" : ""}
+            />
+            {errors.longUrl && <Error message={errors.longUrl} />}
+          </div>
+
+          <div>
+            <Input
+              id="customUrl"
+              placeholder="Custom short URL (optional)"
+              value={formValues.customUrl}
+              onChange={handleInputChange}
+              className={errors.customUrl ? "border-red-500" : ""}
+            />
+            {errors.customUrl && <Error message={errors.customUrl} />}
+          </div>
+        </div>
+
         {errors.message && <Error message={errors.message} />}
+        
         <DialogFooter className="sm:justify-start">
           <Button
             type="button"

@@ -6,7 +6,7 @@ import { getClicksForUrl } from "@/db/apiClicks";
 import { deleteUrl, getUrl } from "@/db/apiUrls";
 import useFetch from "@/hooks/use-fetch";
 import { Copy, Download, LinkIcon, Trash } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BarLoader, BeatLoader } from "react-spinners";
 
@@ -14,9 +14,34 @@ const cardBase = "bg-[#5d5e6c] text-white rounded-xl shadow-md p-6";
 const cardHeader = "mb-2 text-lg font-semibold";
 
 const LinkPage = () => {
+  const { id } = useParams();
+  const { user } = UrlState();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [urlData, setUrlData] = useState(null);
+
+  useEffect(() => {
+    const fetchUrlData = async () => {
+      try {
+        setLoading(true);
+        const data = await getUrl(id);
+        setUrlData(data);
+      } catch (err) {
+        console.error("Error fetching URL data:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchUrlData();
+    }
+  }, [id]);
+
   const downloadImage = () => {
-    const imageUrl = url?.qr;
-    const fileName = url?.title;
+    const imageUrl = urlData?.qr;
+    const fileName = urlData?.title;
     const anchor = document.createElement("a");
     anchor.href = imageUrl;
     anchor.download = fileName;
@@ -26,14 +51,6 @@ const LinkPage = () => {
   };
 
   const navigate = useNavigate();
-  const { user } = UrlState();
-  const { id } = useParams();
-  const {
-    loading,
-    data: url,
-    fn,
-    error,
-  } = useFetch(getUrl, { id, user_id: user?.id });
 
   const {
     loading: loadingStats,
@@ -44,20 +61,36 @@ const LinkPage = () => {
   const { loading: loadingDelete, fn: fnDelete } = useFetch(deleteUrl, id);
 
   useEffect(() => {
-    fn();
-  }, []);
-
-  useEffect(() => {
     if (!error && loading === false) fnStats();
   }, [loading, error]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <BarLoader width={150} color="#36d7b7" />
+      </div>
+    );
+  }
+
   if (error) {
-    navigate("/dashboard");
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-red-500 text-xl">{error}</div>
+      </div>
+    );
+  }
+
+  if (!urlData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="text-xl">URL not found</div>
+      </div>
+    );
   }
 
   let link = "";
-  if (url) {
-    link = url?.custom_url ? url?.custom_url : url.short_url;
+  if (urlData) {
+    link = urlData?.custom_url ? urlData?.custom_url : urlData.short_url;
   }
 
   return (
@@ -69,7 +102,7 @@ const LinkPage = () => {
         {/* Left: Link Details */}
         <div className="col-span-1 space-y-4 sm:space-y-6">
           <div className={cardBase + " w-full p-4 sm:p-6"}>
-            <h1 className="text-xl sm:text-2xl font-bold mb-4 break-words">{url?.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold mb-4 break-words">{urlData?.title}</h1>
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
                 <span className="font-semibold text-base sm:text-lg">Short URL:</span>
@@ -93,17 +126,17 @@ const LinkPage = () => {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
                 <span className="font-semibold text-base sm:text-lg">Original URL:</span>
                 <a
-                  href={url?.original_url}
+                  href={urlData?.original_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline flex items-center gap-1 break-all text-sm sm:text-base"
                 >
                   <LinkIcon className="h-4 w-4" />
-                  {url?.original_url}
+                  {urlData?.original_url}
                 </a>
               </div>
               <div className="text-xs sm:text-sm text-white">
-                Created: {new Date(url?.created_at).toLocaleString()}
+                Created: {new Date(urlData?.created_at).toLocaleString()}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
                 <Button variant="outline" onClick={downloadImage} className="w-full sm:w-auto">
@@ -134,7 +167,7 @@ const LinkPage = () => {
           </div>
           <div className={cardBase + " flex justify-center items-center py-6 sm:py-8 w-full"}>
             <img
-              src={url?.qr}
+              src={urlData?.qr}
               className="w-40 h-40 sm:w-64 sm:h-64 object-contain ring-2 ring-blue-500 p-2 rounded-lg bg-white"
               alt="QR Code"
             />

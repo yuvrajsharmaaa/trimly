@@ -11,6 +11,7 @@ import { getClicksForUrls } from "@/db/apiClicks";
 import { UrlState } from "@/context";
 import LinkCard from '@/components/ui/link-card';
 import { CreateLink } from '@/components/create-link';
+import { DebugUrls } from '@/components/debug-urls';
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,9 +34,12 @@ const Dashboard = () => {
     if (urls?.length) fnClicks();
   }, [urls?.length]);
 
-  const filteredUrls = urls?.filter((url) =>
-    url.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUrls = urls?.filter((url) => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
+    const title = url.title || url.original_url;
+    return title.toLowerCase().includes(searchLower);
+  });
 
   // Animated stat (simple count up)
   const AnimatedNumber = ({ value }) => {
@@ -80,6 +84,10 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen w-full max-w-6xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
       {(loading || loadingClicks) && <BarLoader width={"100%"} color='#91939f' />}
+      {/* Debug section - remove this after testing */}
+      <div className="mb-6">
+        <DebugUrls />
+      </div>
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
         <Card className="flex flex-row items-center gap-4 bg-[#f7f7f8] text-black shadow-md p-3 sm:p-4 w-full">
