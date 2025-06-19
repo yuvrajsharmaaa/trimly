@@ -37,30 +37,53 @@ export async function getUrl(id) {
 }
 
 export async function getLongUrl(id) {
+  if (!id) {
+    throw new Error("URL ID is required");
+  }
+
   try {
-    // Try short_url first
+    // First try exact match on short_url
     const { data: shortUrlData, error: shortUrlError } = await supabase
       .from("urls")
       .select("*")
       .eq("short_url", id)
       .maybeSingle();
 
-    if (shortUrlData) return shortUrlData;
+    if (shortUrlData) {
+      console.log("Found by short_url:", id);
+      return shortUrlData;
+    }
 
-    // Try custom_url if short_url not found
+    // Then try exact match on custom_url
     const { data: customUrlData, error: customUrlError } = await supabase
       .from("urls")
       .select("*")
       .eq("custom_url", id)
       .maybeSingle();
 
-    if (customUrlData) return customUrlData;
+    if (customUrlData) {
+      console.log("Found by custom_url:", id);
+      return customUrlData;
+    }
 
-    // If neither found, throw error
+    // If no exact matches, try case-insensitive search
+    const { data: fuzzyData, error: fuzzyError } = await supabase
+      .from("urls")
+      .select("*")
+      .or(`short_url.ilike.${id},custom_url.ilike.${id}`)
+      .maybeSingle();
+
+    if (fuzzyData) {
+      console.log("Found by fuzzy match:", id);
+      return fuzzyData;
+    }
+
+    // If still not found, throw error
+    console.error("No URL found for:", id);
     throw new Error("URL not found");
   } catch (error) {
     console.error("Error looking up URL:", error);
-    throw new Error("URL not found");
+    throw new Error(error.message || "URL not found");
   }
 }
 
@@ -73,43 +96,57 @@ function dataURLtoBlob(dataurl) {
   return new Blob([u8arr], {type:mime});
 }
 
-export async function createUrl(
-  { title, longUrl, customUrl, user_id },
-  qrcode
-) {
-  const short_url = Math.random().toString(36).substr(2, 6);
-  const fileName = `qr-${short_url}`;
+export async function createUrl({ title, longUrl, customUrl, user_id }, qrcode) {
+  try {
+    // Generate a unique short URL
+    const short_url = Math.random().toString(36).substring(2, 8); // Made longer (6 chars)
+    
+    // Ensure the URL has a protocol
+    let original_url = longUrl;
+    if (!original_url.startsWith('http://') && !original_url.startsWith('https://')) {
+      original_url = 'https://' + original_url;
+    }
 
-  const qrBlob = dataURLtoBlob(qrcode);
+    // First check if custom URL already exists
+    if (customUrl) {
+      const { data: existingUrl } = await supabase
+        .from("urls")
+        .select("id")
+        .or(`custom_url.eq.${customUrl},short_url.eq.${customUrl}`)
+        .maybeSingle();
 
-  const { error: storageError } = await supabase.storage
-    .from("urlshortener")
-    .upload(fileName, qrBlob);
+      if (existingUrl) {
+        throw new Error("Custom URL already taken");
+      }
+    }
 
-  if (storageError) throw new Error(storageError.message);
+    // Insert the new URL
+    const { data, error } = await supabase
+      .from("urls")
+      .insert([
+        {
+          title: title || original_url,
+          user_id,
+          original_url,
+          custom_url: customUrl || null,
+          short_url,
+          qr_code: qrcode || null,
+          clicks: 0
+        }
+      ])
+      .select()
+      .single();
 
-  const qr = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/qrs/${fileName}`;
+    if (error) {
+      console.error("Error creating URL:", error);
+      throw new Error(error.message);
+    }
 
-  const { data, error } = await supabase
-    .from("urls")
-    .insert([
-      {
-        title,
-        user_id,
-        original_url: longUrl,
-        custom_url: customUrl || null,
-        short_url,
-        qr,
-      },
-    ])
-    .select();
-
-  if (error) {
-    console.error(error);
-    throw new Error("Error creating short URL");
+    return data;
+  } catch (error) {
+    console.error("Error in createUrl:", error);
+    throw new Error(error.message || "Error creating short URL");
   }
-
-  return data;
 }
 
 export async function deleteUrl(id) {
@@ -132,7 +169,7 @@ export async function testUrlLookup() {
   // Get all URLs to see what's in the database
   const { data, error } = await supabase
     .from("urls")
-    .select("id, original_url, short_url, custom_url, user_id")
+    .select("id, original_url, short_url, custom_url, user_id, clicks")
     .limit(10);
 
   if (error) {
