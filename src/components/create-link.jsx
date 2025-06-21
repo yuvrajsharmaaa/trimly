@@ -84,7 +84,7 @@ export function CreateLink() {
       const validatedData = await schema.validate(formValues, { abortEarly: false });
 
       // Create the short URL
-      const shortUrl = validatedData.customUrl || Math.random().toString(36).substring(2, 6);
+      const shortUrl = validatedData.customUrl || Math.random().toString(36).substring(2, 10);
       
       // Ensure the long URL has a protocol
       let originalUrl = validatedData.longUrl;
