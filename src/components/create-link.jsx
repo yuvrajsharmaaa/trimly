@@ -24,12 +24,12 @@ export function CreateLink() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [formValues, setFormValues] = useState({
-    longUrl: "",
+    original_url: "",
     customUrl: "",
   });
 
   const schema = yup.object().shape({
-    longUrl: yup
+    original_url: yup
       .string()
       .trim()
       .url("Must be a valid URL")
@@ -87,7 +87,7 @@ export function CreateLink() {
       const shortUrl = validatedData.customUrl || Math.random().toString(36).substring(2, 10);
       
       // Ensure the long URL has a protocol
-      let originalUrl = validatedData.longUrl;
+      let originalUrl = validatedData.original_url;
       if (!originalUrl.startsWith('http://') && !originalUrl.startsWith('https://')) {
         originalUrl = 'https://' + originalUrl;
       }
@@ -151,13 +151,13 @@ export function CreateLink() {
         <div className="space-y-4">
           <div>
             <Input
-              id="longUrl"
+              id="original_url"
               placeholder="Enter your Long URL"
-              value={formValues.longUrl}
+              value={formValues.original_url}
               onChange={handleInputChange}
-              className={errors.longUrl ? "border-red-500" : ""}
+              className={errors.original_url ? "border-red-500" : ""}
             />
-            {errors.longUrl && <Error message={errors.longUrl} />}
+            {errors.original_url && <Error message={errors.original_url} />}
           </div>
 
           <div>
