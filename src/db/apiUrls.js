@@ -42,47 +42,27 @@ export async function getLongUrl(id) {
   }
 
   try {
-    // First try exact match on short_url
-    const { data: shortUrlData, error: shortUrlError } = await supabase
-      .from("urls")
-      .select("*")
-      .eq("short_url", id)
-      .maybeSingle();
-
-    if (shortUrlData) {
-      console.log("Found by short_url:", id);
-      return shortUrlData;
-    }
-
-    // Then try exact match on custom_url
-    const { data: customUrlData, error: customUrlError } = await supabase
-      .from("urls")
-      .select("*")
-      .eq("custom_url", id)
-      .maybeSingle();
-
-    if (customUrlData) {
-      console.log("Found by custom_url:", id);
-      return customUrlData;
-    }
-
-    // If no exact matches, try case-insensitive search
-    const { data: fuzzyData, error: fuzzyError } = await supabase
+    const { data, error } = await supabase
       .from("urls")
       .select("*")
       .or(`short_url.ilike.${id},custom_url.ilike.${id}`)
       .maybeSingle();
 
-    if (fuzzyData) {
-      console.log("Found by fuzzy match:", id);
-      return fuzzyData;
+    if (error) {
+      console.error("Error looking up URL:", error);
+      throw new Error(error.message || "URL not found");
+    }
+
+    if (data) {
+      console.log("Found URL by case-insensitive match:", id);
+      return data;
     }
 
     // If still not found, throw error
     console.error("No URL found for:", id);
     throw new Error("URL not found");
   } catch (error) {
-    console.error("Error looking up URL:", error);
+    console.error("Error in getLongUrl:", error);
     throw new Error(error.message || "URL not found");
   }
 }
