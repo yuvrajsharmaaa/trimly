@@ -51,16 +51,13 @@ const RedirectLink = () => {
           customUrl: data.custom_url
         }));
 
-        // Store click data in the background
-        try {
-          await storeClicks({
-            id: data.id,
-            originalUrl: data.original_url,
-          }).catch(console.error);
-        } catch (clickError) {
-          console.error("Error storing click:", clickError);
-          setDebugInfo(prev => ({ ...prev, clickError: clickError.message }));
-        }
+        // Store click data in the background, but don't block redirection
+        storeClicks({
+          id: data.id,
+          originalUrl: data.original_url,
+        }).catch((err) => {
+          console.error("Failed to store click:", err);
+        });
 
         // Ensure URL has proper protocol
         let redirectUrl = data.original_url;
