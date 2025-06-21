@@ -67,10 +67,7 @@ const RedirectLink = () => {
 
         setDebugInfo(prev => ({ ...prev, redirectUrl }));
         
-        // Add a small delay to show debug info before redirect
-        setTimeout(() => {
-          window.location.replace(redirectUrl);
-        }, 1000);
+        window.location.replace(redirectUrl);
       } catch (err) {
         console.error("Redirect error:", err);
         setDebugInfo(prev => ({ ...prev, error: err.message }));
