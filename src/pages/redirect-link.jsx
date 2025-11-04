@@ -1,5 +1,5 @@
 import { storeClicks } from "@/db/apiClicks";
-import { getLongUrl, testUrlLookup } from "@/db/apiUrls";
+import { getLongUrl } from "@/db/apiUrls";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
@@ -20,11 +20,6 @@ const RedirectLink = () => {
       }
 
       try {
-        // First, let's check what URLs exist in the database
-        const allUrls = await testUrlLookup();
-        console.log("All URLs in database:", allUrls);
-        setDebugInfo(prev => ({ ...prev, allUrls }));
-
         console.log("Looking up URL:", id);
         setDebugInfo(prev => ({ ...prev, lookingFor: id }));
         
