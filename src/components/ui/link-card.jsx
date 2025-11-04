@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from "react-router-dom"
-import { Copy, Download, LinkIcon, Trash } from 'lucide-react'
+import { Copy, LinkIcon, Trash } from 'lucide-react'
 import { Button } from './button'
 import useFetch from "@/hooks/use-fetch";
 import { deleteUrl } from "@/db/apiUrls";
@@ -8,17 +8,6 @@ import { BeatLoader } from 'react-spinners';
 
 const LinkCard = ({ url, fetchUrls }) => {
     const [qrError, setQrError] = useState(false);
-
-    const downloadQRCode = () => {
-        if (!url?.qr_code) return;
-        
-        const link = document.createElement('a');
-        link.href = url.qr_code;
-        link.download = `qr-${url.short_url}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
 
     const copyShortUrl = () => {
         const shortUrl = `${window.location.origin}/${url?.custom_url || url?.short_url}`;
@@ -58,23 +47,16 @@ const LinkCard = ({ url, fetchUrls }) => {
                         variant="ghost"
                         onClick={copyShortUrl}
                         className="hover:bg-primary/20"
+                        title="Copy short URL"
                     >
                         <Copy />
                     </Button>
-                    {url?.qr_code && !qrError && (
-                        <Button 
-                            variant="ghost" 
-                            className="hover:bg-primary/20" 
-                            onClick={downloadQRCode}
-                        >
-                            <Download />
-                        </Button>
-                    )}
                     <Button
                         variant="ghost"
                         onClick={() => fnDelete().then(() => fetchUrls())}
                         disabled={loadingDelete}
                         className="hover:bg-primary/20"
+                        title="Delete URL"
                     >
                         {loadingDelete ? <BeatLoader size={5} color="white" /> : <Trash />}
                     </Button>

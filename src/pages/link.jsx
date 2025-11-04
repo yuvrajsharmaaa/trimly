@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getClicksForUrl } from "@/db/apiClicks";
 import { deleteUrl, getUrl } from "@/db/apiUrls";
 import useFetch from "@/hooks/use-fetch";
-import { Copy, Download, LinkIcon, Trash } from "lucide-react";
+import { Copy, LinkIcon, Trash } from "lucide-react";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BarLoader, BeatLoader } from "react-spinners";
@@ -43,17 +43,6 @@ const LinkPage = () => {
       fetchUrlData();
     }
   }, [id, fetchUrlData]);
-
-  const downloadImage = () => {
-    const imageUrl = urlData?.qr;
-    const fileName = urlData?.title;
-    const anchor = document.createElement("a");
-    anchor.href = imageUrl;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-  };
 
   const navigate = useNavigate();
 
@@ -144,10 +133,6 @@ const LinkPage = () => {
                 Created: {new Date(urlData?.created_at).toLocaleString()}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
-                <Button variant="outline" onClick={downloadImage} className="w-full sm:w-auto">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download QR
-                </Button>
                 <Button
                   variant="destructive"
                   onClick={() =>
