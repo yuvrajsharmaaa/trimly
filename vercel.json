@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     { 
       "source": "/api/:path*", 
@@ -36,7 +38,11 @@
       ]
     }
   ],
+  "env": {
+    "VITE_SUPABASE_URL": "@vite_supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key"
+  },
   "github": {
     "silent": true
   }
-} 
+}

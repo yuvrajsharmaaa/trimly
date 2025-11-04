@@ -1,9 +1,13 @@
-import { storeClicks } from "@/db/apiClicks";
 import { getLongUrl } from "@/db/apiUrls";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
 
+/**
+ * Client-side redirect component (fallback only)
+ * Primary redirects should be handled by /api/redirect/[shortcode]
+ * This component only runs when server-side redirect fails or in development
+ */
 const RedirectLink = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -20,10 +24,13 @@ const RedirectLink = () => {
       }
 
       try {
+        console.log("=== REDIRECT DEBUG ===");
         console.log("Looking up URL:", id);
+        console.log("Window location:", window.location.href);
         setDebugInfo(prev => ({ ...prev, lookingFor: id }));
         
         const data = await getLongUrl(id);
+        console.log("=== URL FOUND ===");
         console.log("URL lookup result:", data);
 
         if (!data || !data.original_url) {
@@ -43,16 +50,9 @@ const RedirectLink = () => {
           found: true,
           originalUrl: data.original_url,
           shortUrl: data.short_url,
-          customUrl: data.custom_url
+          customUrl: data.custom_url,
+          note: 'Client-side fallback redirect (server-side should handle this in production)'
         }));
-
-        // Store click data in the background, but don't block redirection
-        storeClicks({
-          id: data.id,
-          originalUrl: data.original_url,
-        }).catch((err) => {
-          console.error("Failed to store click:", err);
-        });
 
         // Ensure URL has proper protocol
         let redirectUrl = data.original_url;
@@ -62,6 +62,10 @@ const RedirectLink = () => {
 
         setDebugInfo(prev => ({ ...prev, redirectUrl }));
         
+        console.log('Client-side redirect to:', redirectUrl);
+        
+        // Use window.location.replace for client-side redirect
+        // Note: In production, server-side redirect should happen before this
         window.location.replace(redirectUrl);
       } catch (err) {
         console.error("Redirect error:", err);

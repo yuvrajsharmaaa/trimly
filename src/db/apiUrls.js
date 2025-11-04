@@ -116,14 +116,22 @@ export async function getLongUrl(id) {
   
   // Check cache first
   const cached = cacheUtils.get(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    console.log("Cache hit for:", id);
+    return cached;
+  }
 
   try {
+    console.log("Looking up URL with id:", id);
+    
+    // Try exact match first with case-insensitive comparison
     const { data, error } = await supabase
       .from("urls")
       .select("*")
-      .or(`short_url.ilike.${id},custom_url.ilike.${id}`)
+      .or(`short_url.eq.${id},custom_url.eq.${id}`)
       .maybeSingle();
+
+    console.log("Database query result:", { data, error });
 
     if (error) {
       console.error("Error looking up URL:", error);
@@ -131,9 +139,19 @@ export async function getLongUrl(id) {
     }
 
     if (!data) {
+      console.error("No URL found in database for:", id);
+      
+      // Debug: Let's see what's actually in the database
+      const { data: allUrls } = await supabase
+        .from("urls")
+        .select("id, short_url, custom_url, original_url")
+        .limit(10);
+      console.log("Available URLs in database:", allUrls);
+      
       throw new Error("URL not found");
     }
 
+    console.log("Found URL:", data);
     // Cache the result
     cacheUtils.set(cacheKey, data, CACHE_TTL * 2); // Longer TTL for redirects
     return data;
