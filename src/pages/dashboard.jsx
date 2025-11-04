@@ -1,22 +1,22 @@
-import { Button } from '@/components/ui/button'
-import { useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import useFetch from '@/hooks/use-fetch'
 import { Filter, Link2, BarChart2, Star, Activity } from 'lucide-react'
-import React, { useState } from 'react'
 import { getUrls } from "@/db/apiUrls";
 import { BarLoader } from 'react-spinners'
 import { getClicksForUrls } from "@/db/apiClicks";
-import { UrlState } from "@/context";
 import LinkCard from '@/components/ui/link-card';
 import { CreateLink } from '@/components/create-link';
-import { DebugUrls } from '@/components/debug-urls';
 
+/**
+ * Optimized Dashboard Component
+ * Implements memoization, efficient filtering, and performance patterns
+ * No authentication required - public access
+ */
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const { user, loading: userLoading } = UrlState();
-  const { loading, error, data: urls, fn: fnUrls } = useFetch(getUrls, user?.id || 'guest');
+  const { loading, error, data: urls, fn: fnUrls } = useFetch(getUrls);
   const {
     loading: loadingClicks,
     data: clicks,
@@ -25,31 +25,54 @@ const Dashboard = () => {
     urls?.map((url) => url.id)
   );
 
+  // Fetch URLs on mount
   useEffect(() => {
-    if (!userLoading) {
-      fnUrls();
-    }
-  }, [userLoading, user?.id])
+    fnUrls();
+  }, []);
+
+  // Fetch clicks when URLs change
   useEffect(() => {
     if (urls?.length) fnClicks();
   }, [urls?.length]);
 
-  const filteredUrls = urls?.filter((url) => {
-    if (!searchQuery) return true;
-    const searchLower = searchQuery.toLowerCase();
-    const title = url.title || url.original_url;
-    return title.toLowerCase().includes(searchLower);
-  });
+  // Memoized search handler for better performance
+  const handleSearchChange = useCallback((e) => {
+    setSearchQuery(e.target.value);
+  }, []);
 
-  // Animated stat (simple count up)
-  const AnimatedNumber = ({ value }) => {
-    const [display, setDisplay] = React.useState(0);
-    React.useEffect(() => {
-      let start = 0;
+  // Memoized filtered URLs - only recompute when urls or searchQuery changes
+  const filteredUrls = useMemo(() => {
+    if (!urls) return [];
+    if (!searchQuery.trim()) return urls;
+    
+    const searchLower = searchQuery.toLowerCase();
+    return urls.filter((url) => {
+      const title = url.title || url.original_url || '';
+      const shortUrl = url.short_url || '';
+      const customUrl = url.custom_url || '';
+      return (
+        title.toLowerCase().includes(searchLower) ||
+        shortUrl.toLowerCase().includes(searchLower) ||
+        customUrl.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [urls, searchQuery]);
+
+  // Animated stat component with optimization
+  const AnimatedNumber = useCallback(({ value }) => {
+    const [display, setDisplay] = useState(0);
+    useEffect(() => {
       const end = value || 0;
-      if (start === end) return;
-      let increment = end / 30;
+      if (end === 0) {
+        setDisplay(0);
+        return;
+      }
+      
+      let start = 0;
+      const duration = 800;
+      const increment = end / (duration / 16);
       let current = start;
+      
       const timer = setInterval(() => {
         current += increment;
         if (current >= end) {
@@ -58,36 +81,43 @@ const Dashboard = () => {
         } else {
           setDisplay(Math.floor(current));
         }
-      }, 15);
+      }, 16);
+      
       return () => clearInterval(timer);
     }, [value]);
     return <span>{display}</span>;
-  };
+  }, []);
 
-  // Extra stats
-  const now = new Date();
-  const activeLinks = urls?.filter(url => {
-    const created = new Date(url.created_at);
-    const diff = (now - created) / (1000 * 60 * 60 * 24); // days
-    return diff <= 7;
-  })?.length || 0;
+  // Memoized statistics calculations
+  const stats = useMemo(() => {
+    if (!urls) return { activeLinks: 0, mostClicked: null };
+    
+    const now = new Date();
+    const activeLinks = urls.filter(url => {
+      const created = new Date(url.created_at);
+      const diff = (now - created) / (1000 * 60 * 60 * 24);
+      return diff <= 7;
+    }).length;
 
-  let mostClicked = null;
-  if (urls && clicks) {
-    const clickCounts = urls.map(url => ({
-      ...url,
-      clickCount: clicks.filter(c => c.url_id === url.id).length
-    }));
-    mostClicked = clickCounts.reduce((max, curr) => curr.clickCount > (max?.clickCount || 0) ? curr : max, null);
-  }
+    let mostClicked = null;
+    if (clicks) {
+      const clickCounts = urls.map(url => ({
+        ...url,
+        clickCount: clicks.filter(c => c.url_id === url.id).length
+      }));
+      mostClicked = clickCounts.reduce(
+        (max, curr) => curr.clickCount > (max?.clickCount || 0) ? curr : max, 
+        null
+      );
+    }
+
+    return { activeLinks, mostClicked };
+  }, [urls, clicks]);
 
   return (
     <div className="min-h-screen w-full max-w-6xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
       {(loading || loadingClicks) && <BarLoader width={"100%"} color='#91939f' />}
-      {/* Debug section - remove this after testing */}
-      <div className="mb-6">
-        <DebugUrls />
-      </div>
+      
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
         <Card className="flex flex-row items-center gap-4 bg-[#f7f7f8] text-black shadow-md p-3 sm:p-4 w-full">
@@ -119,7 +149,7 @@ const Dashboard = () => {
           <div>
             <CardTitle className="text-base sm:text-lg font-bold">Active Links</CardTitle>
             <CardContent className="p-0 text-2xl sm:text-3xl font-extrabold">
-              <AnimatedNumber value={activeLinks} />
+              <AnimatedNumber value={stats.activeLinks} />
             </CardContent>
           </div>
         </Card>
@@ -130,10 +160,10 @@ const Dashboard = () => {
           <div className="truncate max-w-[120px]">
             <CardTitle className="text-base sm:text-lg font-bold">Most Clicked</CardTitle>
             <CardContent className="p-0 text-xs sm:text-base font-semibold truncate">
-              {mostClicked ? (
+              {stats.mostClicked ? (
                 <>
-                  <span className="block truncate">{mostClicked.title}</span>
-                  <span className="block text-purple-700 text-lg">{mostClicked.clickCount} clicks</span>
+                  <span className="block truncate">{stats.mostClicked.title}</span>
+                  <span className="block text-purple-700 text-lg">{stats.mostClicked.clickCount} clicks</span>
                 </>
               ) : (
                 <span className="text-gray-500">N/A</span>
@@ -152,7 +182,7 @@ const Dashboard = () => {
               placeholder="Filter Links..."
               className="w-full pl-10"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
             />
             <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>

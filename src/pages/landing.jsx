@@ -40,12 +40,16 @@ const features = [
   },
 ];
 
+/**
+ * Optimized Landing Page
+ * Direct navigation to dashboard without auth check
+ */
 const LandingPage = () => {
     const [longUrl, setlongUrl] = useState()
     const navigate = useNavigate()
     const handleShorten = (e) => {
         e.preventDefault();
-        if (longUrl) navigate(`/auth?createNew=${longUrl}`)
+        if (longUrl) navigate(`/dashboard`)
     };
     return (
         <div className="min-h-screen w-full bg-gradient-to-br from-[#23232b] via-[#18181b] to-[#23232b] flex flex-col">

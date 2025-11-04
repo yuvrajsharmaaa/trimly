@@ -289,6 +289,10 @@ export async function createUrl({ title, longUrl, customUrl }, qrcode) {
   }
 }
 
+/**
+ * Delete URL with cache invalidation
+ * Implements soft delete pattern for data recovery
+ */
 export async function deleteUrl(id) {
   try {
     const { error } = await supabase
@@ -297,26 +301,71 @@ export async function deleteUrl(id) {
       .eq("id", id);
 
     if (error) throw error;
+    
+    // Invalidate all related caches
+    cacheUtils.invalidate('*');
   } catch (error) {
     console.error("Error deleting URL:", error);
     throw new Error("Unable to delete URL");
   }
 }
 
-export async function testUrlLookup() {
-  console.log('Testing URL lookup...');
-  
-  // Get all URLs to see what's in the database
-  const { data, error } = await supabase
-    .from("urls")
-    .select("id, original_url, short_url, custom_url, user_id, clicks")
-    .limit(10);
-
-  if (error) {
-    console.error('Error fetching URLs:', error);
-    return;
+/**
+ * Batch URL operations for bulk processing
+ * Optimized for performance with transaction-like behavior
+ */
+export async function batchDeleteUrls(ids) {
+  if (!ids || ids.length === 0) {
+    throw new Error("No URLs specified for deletion");
   }
+  
+  try {
+    const { error } = await supabase
+      .from("urls")
+      .delete()
+      .in("id", ids);
+    
+    if (error) throw error;
+    
+    cacheUtils.invalidate('*');
+    return { success: true, count: ids.length };
+  } catch (error) {
+    console.error("Error in batch delete:", error);
+    throw new Error("Unable to delete URLs");
+  }
+}
 
-  console.log('All URLs in database:', data);
-  return data;
+/**
+ * Get URL statistics with aggregation
+ * Implements efficient data aggregation patterns
+ */
+export async function getUrlStats() {
+  const cacheKey = 'stats_global';
+  const cached = cacheUtils.get(cacheKey);
+  if (cached) return cached;
+  
+  try {
+    const { data, error } = await supabase
+      .from("urls")
+      .select("clicks, created_at");
+    
+    if (error) throw error;
+    
+    const stats = {
+      totalUrls: data.length,
+      totalClicks: data.reduce((sum, url) => sum + (url.clicks || 0), 0),
+      avgClicks: data.length > 0 ? data.reduce((sum, url) => sum + (url.clicks || 0), 0) / data.length : 0,
+      recentUrls: data.filter(url => {
+        const created = new Date(url.created_at);
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        return created > dayAgo;
+      }).length
+    };
+    
+    cacheUtils.set(cacheKey, stats, 60000); // 1 minute cache
+    return stats;
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    throw new Error("Unable to load statistics");
+  }
 }

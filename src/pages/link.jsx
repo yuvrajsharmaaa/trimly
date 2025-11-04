@@ -1,43 +1,48 @@
 import DeviceStats from "@/components/device-stats";
 import Location from "@/components/location-stats";
 import { Button } from "@/components/ui/button";
-import { UrlState } from "@/context";
 import { getClicksForUrl } from "@/db/apiClicks";
 import { deleteUrl, getUrl } from "@/db/apiUrls";
 import useFetch from "@/hooks/use-fetch";
 import { Copy, Download, LinkIcon, Trash } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BarLoader, BeatLoader } from "react-spinners";
 
 const cardBase = "bg-[#5d5e6c] text-white rounded-xl shadow-md p-6";
 const cardHeader = "mb-2 text-lg font-semibold";
 
+/**
+ * Optimized Link Details Page
+ * Implements efficient data fetching with caching
+ * No authentication required
+ */
 const LinkPage = () => {
   const { id } = useParams();
-  const { user } = UrlState();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [urlData, setUrlData] = useState(null);
 
-  useEffect(() => {
-    const fetchUrlData = async () => {
-      try {
-        setLoading(true);
-        const data = await getUrl(id);
-        setUrlData(data);
-      } catch (err) {
-        console.error("Error fetching URL data:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Memoized fetch function to prevent recreation
+  const fetchUrlData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getUrl(id);
+      setUrlData(data);
+    } catch (err) {
+      console.error("Error fetching URL data:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
+  useEffect(() => {
     if (id) {
       fetchUrlData();
     }
-  }, [id]);
+  }, [id, fetchUrlData]);
 
   const downloadImage = () => {
     const imageUrl = urlData?.qr;

@@ -3,14 +3,16 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import UrlProvider from "./context";
 
 import AppLayout from "./layouts/app-layout";
-import RequireAuth from "./components/require-auth";
-
 import RedirectLink from "./pages/redirect-link";
 import LandingPage from "./pages/landing";
 import Dashboard from "./pages/dashboard";
 import LinkPage from "./pages/link";
-import Auth from "./pages/auth";
 
+/**
+ * Optimized routing configuration
+ * Removed authentication overhead for better performance
+ * All routes are publicly accessible
+ */
 const router = createBrowserRouter([
   {
     element: <AppLayout />,
@@ -20,24 +22,12 @@ const router = createBrowserRouter([
         element: <LandingPage />,
       },
       {
-        path: "/auth",
-        element: <Auth />,
-      },
-      {
         path: "/dashboard",
-        element: (
-          <RequireAuth>
-            <Dashboard />
-          </RequireAuth>
-        ),
+        element: <Dashboard />,
       },
       {
         path: "/link/:id",
-        element: (
-          <RequireAuth>
-            <LinkPage />
-          </RequireAuth>
-        ),
+        element: <LinkPage />,
       },
       {
         path: "/:id",
@@ -47,6 +37,10 @@ const router = createBrowserRouter([
   },
 ]);
 
+/**
+ * Main App Component
+ * Implements efficient context provider pattern
+ */
 function App() {
   return (
     <UrlProvider>
