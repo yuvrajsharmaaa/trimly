@@ -111,10 +111,11 @@ export default async function handler(req, res) {
 
   try {
     // Query database for the URL (check both short_url and custom_url)
+    // Use ilike for case-insensitive matching
     const { data, error } = await supabase
       .from('urls')
       .select('*')
-      .or(`short_url.eq.${shortcode},custom_url.eq.${shortcode}`)
+      .or(`short_url.ilike.${shortcode},custom_url.ilike.${shortcode}`)
       .maybeSingle();
 
     console.log('Database query result:', { data, error });

@@ -124,11 +124,11 @@ export async function getLongUrl(id) {
   try {
     console.log("Looking up URL with id:", id);
     
-    // Try exact match first with case-insensitive comparison
+    // Try case-insensitive match using ilike (case-insensitive LIKE)
     const { data, error } = await supabase
       .from("urls")
       .select("*")
-      .or(`short_url.eq.${id},custom_url.eq.${id}`)
+      .or(`short_url.ilike.${id},custom_url.ilike.${id}`)
       .maybeSingle();
 
     console.log("Database query result:", { data, error });
