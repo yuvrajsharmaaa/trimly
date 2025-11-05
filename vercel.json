@@ -1,7 +1,11 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs20.x",
+      "includeFiles": "node_modules/@supabase/**"
     }
   },
   "rewrites": [
@@ -12,17 +16,6 @@
     {
       "source": "/:shortcode",
       "destination": "/api/redirect/:shortcode"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "s-maxage=0"
-        }
-      ]
     }
   ]
 } 
