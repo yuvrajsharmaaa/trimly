@@ -17,22 +17,22 @@ import { DebugUrls } from '@/components/debug-urls'
  */
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("")
-  const { loading, error, data: urls, fn: fnUrls } = useFetch(getUrls)
+  const { loading, error, data: urls, fn: fnUrls } = useFetch(getUrls) as any
   const {
     loading: loadingClicks,
     data: clicks,
     fn: fnClicks
   } = useFetch(getClicksForUrls,
-    urls?.map((url) => url.id)
-  )
+    (urls as any)?.map((url: any) => url.id)
+  ) as any
 
   useEffect(() => {
     fnUrls()
   }, [])
 
   useEffect(() => {
-    if (urls?.length) fnClicks()
-  }, [urls?.length])
+    if ((urls as any)?.length) fnClicks()
+  }, [(urls as any)?.length])
 
   const handleSearchChange = useCallback((e) => {
     setSearchQuery(e.target.value)
@@ -43,7 +43,7 @@ export default function Dashboard() {
     if (!searchQuery.trim()) return urls
     
     const searchLower = searchQuery.toLowerCase()
-    return urls.filter((url) => {
+    return (urls as any[]).filter((url: any) => {
       const title = url.title || url.original_url || ''
       const shortUrl = url.short_url || ''
       const customUrl = url.custom_url || ''
@@ -88,20 +88,20 @@ export default function Dashboard() {
     if (!urls) return { activeLinks: 0, mostClicked: null }
     
     const now = new Date()
-    const activeLinks = urls.filter(url => {
+    const activeLinks = (urls as any[]).filter((url: any) => {
       const created = new Date(url.created_at)
-      const diff = (now - created) / (1000 * 60 * 60 * 24)
+      const diff = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
       return diff <= 7
     }).length
 
-    let mostClicked = null
+    let mostClicked: any = null
     if (clicks) {
-      const clickCounts = urls.map(url => ({
+      const clickCounts = (urls as any[]).map((url: any) => ({
         ...url,
-        clickCount: clicks.filter(c => c.url_id === url.id).length
+        clickCount: (clicks as any[]).filter((c: any) => c.url_id === url.id).length
       }))
       mostClicked = clickCounts.reduce(
-        (max, curr) => curr.clickCount > (max?.clickCount || 0) ? curr : max, 
+        (max: any, curr: any) => curr.clickCount > (max?.clickCount || 0) ? curr : max, 
         null
       )
     }
@@ -125,7 +125,7 @@ export default function Dashboard() {
           <div>
             <CardTitle className="text-base sm:text-lg font-bold">Links Created</CardTitle>
             <CardContent className="p-0 text-2xl sm:text-3xl font-extrabold">
-              <AnimatedNumber value={urls?.length || 0} />
+              <AnimatedNumber value={(urls as any)?.length || 0} />
             </CardContent>
           </div>
         </Card>
@@ -136,7 +136,7 @@ export default function Dashboard() {
           <div>
             <CardTitle className="text-base sm:text-lg font-bold">Total Clicks</CardTitle>
             <CardContent className="p-0 text-2xl sm:text-3xl font-extrabold">
-              <AnimatedNumber value={clicks?.length || 0} />
+              <AnimatedNumber value={(clicks as any)?.length || 0} />
             </CardContent>
           </div>
         </Card>
@@ -189,7 +189,7 @@ export default function Dashboard() {
       </div>
 
       <div>
-        {error && <div className="text-red-500 text-center">{error.message}</div>}
+        {error && <div className="text-red-500 text-center">{(error as any)?.message}</div>}
         {filteredUrls && filteredUrls.length === 0 && (
           <div className="text-center text-gray-400 py-16">
             <div className="text-2xl mb-2">No links found</div>
@@ -199,8 +199,8 @@ export default function Dashboard() {
         )}
         <div className="mt-4">
           <div className="flex flex-col gap-6 w-full">
-            {(filteredUrls || []).map((url, i) => (
-              <LinkCard key={i} url={url} fetchUrls={fnUrls} showActions />
+            {(filteredUrls || []).map((url: any, i: number) => (
+              <LinkCard key={i} url={url} fetchUrls={fnUrls} />
             ))}
           </div>
         </div>

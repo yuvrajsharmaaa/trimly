@@ -25,7 +25,7 @@ export default async function RedirectPage({
     // Case-insensitive lookup for short_url OR custom_url
     const { data, error } = await supabase
       .from('urls')
-      .select('id, original_url, short_url, custom_url')
+      .select('id, original_url, short_url, custom_url, clicks')
       .or(`short_url.ilike.${shortcode},custom_url.ilike.${shortcode}`)
       .maybeSingle()
 
@@ -42,11 +42,11 @@ export default async function RedirectPage({
     // Increment click count
     await supabase
       .from('urls')
-      .update({ clicks: data.clicks || 0 + 1 })
+      .update({ clicks: (data.clicks || 0) + 1 })
       .eq('id', data.id)
 
     // Store click analytics (async, don't wait)
-    storeClicks({ url_id: data.id }).catch(err => {
+    storeClicks({ id: data.id, originalUrl: data.original_url }).catch(err => {
       console.error('[Click Tracking Error]', err)
     })
 

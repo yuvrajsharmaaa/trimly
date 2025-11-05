@@ -78,7 +78,7 @@ export default function LandingPage() {
                 className="pl-10 h-12 border-2 border-trimly-100 focus:border-trimly-400 focus:ring-trimly-400 text-base w-full"
               />
             </div>
-            <Button className="h-12 w-full md:w-auto px-8 text-base font-semibold bg-gradient-to-r from-[#41414b] to-[#6f6f7c] hover:from-[#6f6f7c] hover:to-[#41414b] transition">
+            <Button variant="default" size="default" className="h-12 w-full md:w-auto px-8 text-base font-semibold bg-gradient-to-r from-[#41414b] to-[#6f6f7c] hover:from-[#6f6f7c] hover:to-[#41414b] transition">
               Shorten URL
             </Button>
           </form>
@@ -92,8 +92,8 @@ export default function LandingPage() {
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {features.map((f, i) => (
             <Card key={i} className="h-60 sm:h-64 w-full bg-[#f7f7f8] border-0 shadow-md transform transition-transform duration-300 hover:scale-105 hover:shadow-xl flex flex-col justify-between">
-              <CardHeader>
-                <CardTitle>
+              <CardHeader className="">
+                <CardTitle className="">
                   <div className="mb-4 p-3 rounded-full w-14 h-14 flex items-center justify-center bg-trimly-50 text-trimly-600 mx-auto">
                     {f.icon}
                   </div>
