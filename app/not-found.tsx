@@ -5,7 +5,7 @@ export default function NotFound() {
         <h1 className="text-8xl font-extrabold mb-4 text-[#6f6f7c]">404</h1>
         <h2 className="text-3xl font-bold mb-4">Link Not Found</h2>
         <p className="text-xl text-muted-foreground mb-8 max-w-md">
-          The shortened URL you're looking for doesn't exist or has been removed.
+          The shortened URL you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <a
           href="/"

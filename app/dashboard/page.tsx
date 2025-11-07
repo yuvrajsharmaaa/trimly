@@ -13,6 +13,38 @@ import { CreateLink } from '@/components/create-link'
 import { DebugUrls } from '@/components/debug-urls'
 
 /**
+ * Animated number component
+ */
+function AnimatedNumber({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    const end = value || 0
+    if (end === 0) {
+      setDisplay(0)
+      return
+    }
+    
+    let start = 0
+    const duration = 800
+    const increment = end / (duration / 16)
+    let current = start
+    
+    const timer = setInterval(() => {
+      current += increment
+      if (current >= end) {
+        setDisplay(end)
+        clearInterval(timer)
+      } else {
+        setDisplay(Math.floor(current))
+      }
+    }, 16)
+    
+    return () => clearInterval(timer)
+  }, [value])
+  return <span>{display}</span>
+}
+
+/**
  * Dashboard - Next.js App Router Version
  */
 export default function Dashboard() {
@@ -28,11 +60,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     fnUrls()
-  }, [])
+  }, [fnUrls])
 
   useEffect(() => {
     if ((urls as any)?.length) fnClicks()
-  }, [(urls as any)?.length])
+  }, [urls, fnClicks])
 
   const handleSearchChange = useCallback((e) => {
     setSearchQuery(e.target.value)
@@ -54,35 +86,6 @@ export default function Dashboard() {
       )
     })
   }, [urls, searchQuery])
-
-  const AnimatedNumber = useCallback(({ value }) => {
-    const [display, setDisplay] = useState(0)
-    useEffect(() => {
-      const end = value || 0
-      if (end === 0) {
-        setDisplay(0)
-        return
-      }
-      
-      let start = 0
-      const duration = 800
-      const increment = end / (duration / 16)
-      let current = start
-      
-      const timer = setInterval(() => {
-        current += increment
-        if (current >= end) {
-          setDisplay(end)
-          clearInterval(timer)
-        } else {
-          setDisplay(Math.floor(current))
-        }
-      }, 16)
-      
-      return () => clearInterval(timer)
-    }, [value])
-    return <span>{display}</span>
-  }, [])
 
   const stats = useMemo(() => {
     if (!urls) return { activeLinks: 0, mostClicked: null }
