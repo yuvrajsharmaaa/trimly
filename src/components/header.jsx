@@ -1,6 +1,7 @@
 import React from 'react'
 import { Button } from "@/components/ui/button"
-import { Link, useNavigate } from 'react-router-dom'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { LinkIcon } from 'lucide-react'
 
 /**
@@ -8,16 +9,16 @@ import { LinkIcon } from 'lucide-react'
  * Simplified without authentication logic for better performance
  */
 const Header = () => {
-    const navigate = useNavigate();
+    const router = useRouter();
     
     return (
         <div className='py-2 px-4 flex justify-between items-center'>
-            <Link to="/">
+            <Link href="/">
                 <img src='/logo.png' className='md:h-12 h-10' alt='Trimly Logo'></img>
             </Link>
             <div className='flex items-center gap-3 mr-2'>
                 <Button 
-                    onClick={() => navigate("/dashboard")} 
+                    onClick={() => router.push("/dashboard")} 
                     className="bg-[#41414b] hover:bg-[#5d5e6c] flex items-center gap-2"
                     variant="default"
                 >

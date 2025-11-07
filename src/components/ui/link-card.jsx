@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from "react-router-dom"
+import Link from "next/link"
 import { Copy, LinkIcon, Trash } from 'lucide-react'
 import { Button } from './button'
 import useFetch from "@/hooks/use-fetch";
@@ -27,7 +27,7 @@ const LinkCard = ({ url, fetchUrls }) => {
                         onError={() => setQrError(true)}
                     />
                 )}
-                <Link to={`/link/${url?.id}`} className="flex flex-col flex-1">
+                <Link href={`/link/${url?.id}`} className="flex flex-col flex-1">
                     <span className="text-3xl font-extrabold hover:underline cursor-pointer">
                         {url?.title || url?.original_url}
                     </span>

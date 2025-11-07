@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useState, useCallback, useMemo } from "react";
 import Error from "./error";
 import * as yup from "yup";
@@ -21,7 +21,7 @@ import QRCode from "qrcode";
  * Implements debouncing, memoization, and efficient state management
  */
 export function CreateLink() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -108,7 +108,7 @@ export function CreateLink() {
       // Close dialog and navigate
       setFormValues({ original_url: "", customUrl: "" });
       setOpen(false);
-      navigate(`/link/${data.id}`);
+      router.push(`/link/${data.id}`);
       
     } catch (err) {
       console.error('Error creating link:', err);
@@ -126,7 +126,7 @@ export function CreateLink() {
     } finally {
       setLoading(false);
     }
-  }, [formValues, schema, generateQRCode, navigate]);
+  }, [formValues, schema, generateQRCode, router]);
 
   // Memoized button disabled state
   const isDisabled = useMemo(() => 
