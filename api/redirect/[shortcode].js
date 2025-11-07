@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Get credentials - Vercel uses VITE_ prefix
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+// Get credentials from Next.js env
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
 /**
  * Parse user agent for analytics

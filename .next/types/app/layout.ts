@@ -1,4 +1,4 @@
-// File: /home/yuvrajs/Desktop/trimly/trimly/app/layout.tsx
+// File: /home/yuvrajs/Desktop/Coding /trimly/trimly/app/layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

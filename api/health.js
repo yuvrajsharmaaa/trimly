@@ -17,16 +17,16 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString(),
       database: 'connected',
       urlCount: data?.length || 0,
-      supabaseUrl: process.env.VITE_SUPABASE_URL ? 'configured' : 'missing',
-      supabaseKey: process.env.VITE_SUPABASE_ANON_KEY ? 'configured' : 'missing'
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'configured' : 'missing',
+      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'configured' : 'missing'
     });
   } catch (error) {
     res.status(500).json({ 
       status: 'error', 
       error: error.message,
       timestamp: new Date().toISOString(),
-      supabaseUrl: process.env.VITE_SUPABASE_URL ? 'configured' : 'missing',
-      supabaseKey: process.env.VITE_SUPABASE_ANON_KEY ? 'configured' : 'missing'
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'configured' : 'missing',
+      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'configured' : 'missing'
     });
   }
 } 

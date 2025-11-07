@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server';
+
 export const config = {
   matcher: '/:shortcode*',
 };
@@ -21,8 +23,8 @@ export default async function middleware(request) {
   // Extract shortcode
   const shortcode = pathname.substring(1);
   
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     return new Response('Configuration error', { status: 500 });
@@ -155,8 +157,8 @@ export default async function middleware(request) {
       body: JSON.stringify({ clicks: (urlData.clicks || 0) + 1 })
     }).catch(() => {});
 
-    // Return 301 redirect
-    return Response.redirect(redirectUrl, 301);
+  // Return 301 redirect using NextResponse
+  return NextResponse.redirect(redirectUrl, 301);
 
   } catch (error) {
     console.error('Redirect error:', error);
