@@ -17,10 +17,9 @@ import LinkIcon from '@mui/icons-material/Link';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import StarIcon from '@mui/icons-material/Star';
-import useFetch from '../../hooks/use-fetch';
-import { getUrls } from '../../db/apiUrls';
-import { getClicksForUrls } from '../../db/apiClicks';
-
+import useFetch from '../../src/hooks/use-fetch';
+import { getUrls } from '../../src/db/apiUrls';
+import { getClicksForUrls } from '../../src/db/apiClicks';
 import StatsCard from '../../components/dashboard/StatsCard';
 import LinkList from '../../components/dashboard/LinkList';
 import URLShortenerForm from '../../components/dashboard/URLShortenerForm';
@@ -185,69 +184,57 @@ export default function DashboardPage() {
         {/* Statistics Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Suspense fallback={<CircularProgress />}>
-              <StatsCard
-                title="Total Links"
-                value={stats.totalLinks}
-                icon={<LinkIcon />}
-                color="#3b82f6"
-                delay={0}
-              />
-            </Suspense>
+            <StatsCard
+              title="Total Links"
+              value={stats.totalLinks}
+              icon={<LinkIcon />}
+              color="#3b82f6"
+              delay={0}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Suspense fallback={<CircularProgress />}>
-              <StatsCard
-                title="Total Clicks"
-                value={stats.totalClicks}
-                icon={<BarChartIcon />}
-                color="#10b981"
-                trend={12}
-                delay={0.1}
-              />
-            </Suspense>
+            <StatsCard
+              title="Total Clicks"
+              value={stats.totalClicks}
+              icon={<BarChartIcon />}
+              color="#10b981"
+              trend={12}
+              delay={0.1}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Suspense fallback={<CircularProgress />}>
-              <StatsCard
-                title="Active Links"
-                value={stats.activeLinks}
-                icon={<TrendingUpIcon />}
-                color="#f59e0b"
-                delay={0.2}
-              />
-            </Suspense>
+            <StatsCard
+              title="Active Links"
+              value={stats.activeLinks}
+              icon={<TrendingUpIcon />}
+              color="#f59e0b"
+              delay={0.2}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Suspense fallback={<CircularProgress />}>
-              <StatsCard
-                title="Top Link"
-                value={stats.topLink?.clickCount || 0}
-                icon={<StarIcon />}
-                color="#8b5cf6"
-                delay={0.3}
-              />
-            </Suspense>
+            <StatsCard
+              title="Top Link"
+              value={stats.topLink?.clickCount || 0}
+              icon={<StarIcon />}
+              color="#8b5cf6"
+              delay={0.3}
+            />
           </Grid>
         </Grid>
 
         {/* URL Shortener Form */}
         <Box sx={{ mb: 4 }}>
-          <Suspense fallback={<CircularProgress />}>
-            <URLShortenerForm onSubmit={handleCreateShortUrl} />
-          </Suspense>
+          <URLShortenerForm onSubmit={handleCreateShortUrl} />
         </Box>
 
         {/* Links List */}
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <Suspense fallback={<CircularProgress />}>
-              <LinkList
-                links={linkItems}
-                onShowQR={handleShowQR}
-                onShowStats={(link) => console.log('Show stats for:', link)}
-              />
-            </Suspense>
+            <LinkList
+              links={linkItems}
+              onShowQR={handleShowQR}
+              onShowStats={(link) => console.log('Show stats for:', link)}
+            />
           </Grid>
         </Grid>
       </Container>

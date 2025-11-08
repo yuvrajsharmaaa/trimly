@@ -1,4 +1,9 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
+  "/dashboard-new/page": "app/dashboard-new/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/icon.svg/route": "app/icon.svg/route.js",
+  "/link/[id]/page": "app/link/[id]/page.js",
   "/page": "app/page.js",
-  "/icon.svg/route": "app/icon.svg/route.js"
+  "/[shortcode]/page": "app/[shortcode]/page.js"
 }

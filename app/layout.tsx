@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: 'Trimly - URL Shortener',
   description: 'Shorten, track, and manage your URLs with ease',
   icons: {
-    icon: "/icon.svg",
+    icon: '/icon.svg',
   },
 }
 
@@ -16,9 +16,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <ThemeProvider>{children}</ThemeProvider>
+    <html lang="en">
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
