@@ -46,7 +46,7 @@ export default function LinkDetailsPage({ params }: { params: { id: string } }) 
             <CardTitle>Link Not Found</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">This link doesn't exist or has been deleted.</p>
+            <p className="text-muted-foreground mb-4">This link doesn&apos;t exist or has been deleted.</p>
             <Button onClick={() => router.push('/dashboard')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
