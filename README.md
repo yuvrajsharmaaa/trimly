@@ -1,130 +1,171 @@
-# URL Shortener
+# Trimly — URL Shortener
 
-A modern URL shortening service built with React, Vite, and Supabase. Create short, custom URLs and track their performance with detailed analytics.
+A production-ready URL shortening service built with **Next.js 14** (App Router), **React**, **Supabase**, and **Tailwind CSS**.
 
-## Features
-
-- 🔗 Create short URLs instantly
-- 🎯 Custom URL slugs
-- 📊 Track clicks and analytics
-- 👤 User authentication
-- 📱 Responsive design
-- 🌐 Device and location statistics
-# Trimly – URL Shortener
-
-A modern, production‑ready URL shortening service built with React, Vite, and Supabase. Create short, custom URLs and track their performance with lightweight analytics.
-
-This README includes a detailed, academically styled explanation of the Data Structures and Algorithms (DAA) used in the project, with rationale, complexity, and examples.
-
-## Features
+## ✨ Features
 
 - 🔗 Create short URLs instantly
 - 🎯 Custom URL slugs
-- 📊 Click tracking and lightweight analytics
+- 📊 Click tracking and analytics
 - 📱 Responsive design
-- 🌐 Device and location hints (best‑effort)
+- 🌍 Device and location statistics
+- ⚡ Server-side redirects for SEO
+- 🎨 Modern UI with Radix UI components
 
-## Tech Stack
-
-- Frontend: React + Vite
-- UI: shadcn/ui, Tailwind CSS
-- Backend: Supabase (PostgreSQL)
-- Hosting: Vercel (static frontend + serverless redirect function)
-
-## Getting Started
+## 🚀 Quick Setup
 
 ### Prerequisites
 
-- Node.js (v18+ recommended)
+- Node.js 18+ (LTS recommended)
 - npm or yarn
-- Supabase project (free tier is fine)
+- Supabase account (free tier works)
 
-### Installation
-
-1) Clone and install
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/yuvrajsharmaaa/trimly.git
 cd trimly
-npm install
+npm ci
 ```
 
-2) Create `.env.local` in the project root
+### 2. Environment Setup
+
+Create a `.env.local` file in the project root:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-3) Run locally
+### 3. Database Setup
+
+Create these tables in your Supabase project:
+
+**`urls` table:**
+```sql
+CREATE TABLE urls (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  short_url TEXT UNIQUE,
+  custom_url TEXT UNIQUE,
+  original_url TEXT NOT NULL,
+  title TEXT,
+  clicks INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**`clicks` table:**
+```sql
+CREATE TABLE clicks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  url_id UUID REFERENCES urls(id) ON DELETE CASCADE,
+  ip_address TEXT,
+  user_agent TEXT,
+  referrer TEXT,
+  country TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### 4. Run Locally
 
 ```bash
 npm run dev
+# Open http://localhost:3000
 ```
 
-App will be available at http://localhost:5173
+### 5. Production Build
 
-## Environment & Database Setup
+```bash
+npm run build
+npm start
+```
 
-Create two tables in Supabase:
+## 📦 Tech Stack
 
-- `urls(id uuid pk, short_url text unique, custom_url text unique, original_url text not null, clicks int default 0, created_at timestamptz default now())`
-- `clicks(id uuid pk, url_id uuid references urls(id), ip_address text, user_agent text, referrer text, country text, created_at timestamptz default now())`
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript + JavaScript
+- **UI**: Tailwind CSS, Radix UI, shadcn/ui
+- **Database**: Supabase (PostgreSQL)
+- **Analytics**: Recharts
+- **Deployment**: Vercel
 
-Row‑Level Security (RLS): for this public demo, permissive policies allow public SELECT/INSERT/UPDATE/DELETE on `urls` and SELECT/INSERT on `clicks`. For production, tighten policies as needed.
+## 🔧 Recent Fixes & Improvements
+
+This project has been cleaned up and optimized for production:
+
+### Fixed Issues:
+- ✅ React forwardRef warning in Button component
+- ✅ Environment variable naming (migrated from `VITE_*` to `NEXT_PUBLIC_*`)
+- ✅ Middleware redirect using NextResponse
+- ✅ TypeScript type errors in Card and Button components
+- ✅ ESLint configuration for Next.js best practices
+- ✅ Escaped HTML entities in JSX
+- ✅ Production build compilation errors
+
+### Removed:
+- ❌ Incorrect `vercel.json` SPA rewrite (conflicted with Next.js routing)
+- ❌ Unused Vite configuration files
+- ❌ React Router dependencies (replaced with Next.js navigation)
+
+### Optimizations:
+- ⚡ Server-side redirects via middleware for better SEO
+- ⚡ Proper TypeScript typing for UI components
+- ⚡ Clean ESLint rules with warnings for non-critical issues
+- ⚡ Memoized components to reduce unnecessary re-renders
+
+## 📁 Project Structure
+
+```
+trimly/
+├── app/                      # Next.js App Router pages
+│   ├── [shortcode]/          # Dynamic short URL redirect
+│   ├── dashboard/            # Main dashboard
+│   ├── link/[id]/            # Link analytics page
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Homepage
+├── src/
+│   ├── components/           # React components
+│   │   ├── ui/               # Radix UI components
+│   │   ├── create-link.jsx   # Link creation dialog
+│   │   ├── device-stats.jsx  # Device analytics
+│   │   └── location-stats.jsx # Geographic analytics
+│   ├── db/                   # Supabase API functions
+│   │   ├── apiUrls.js        # URL CRUD operations
+│   │   ├── apiClicks.js      # Click tracking
+│   │   └── superbase.js      # Supabase client
+│   └── hooks/                # Custom React hooks
+├── api/                      # Serverless API routes
+├── middleware.js             # Next.js middleware for redirects
+└── package.json
+```
+
+## 🚢 Deploying to Vercel
+
+1. Push your code to GitHub
+2. Import project in Vercel
+3. Add environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy!
+
+Vercel will automatically detect Next.js and configure optimal settings.
+
+## 📝 Usage
+
+1. **Create a short link**: Click "Create New Link" on the dashboard
+2. **Custom slugs**: Optionally provide a custom slug
+3. **Track analytics**: Click on any link card to see detailed stats
+4. **Share**: Copy the short URL and share it anywhere
+
+## 🤝 Contributing
+
+Contributions are welcome! Please open an issue or submit a PR.
+
+## 📄 License
+
+MIT License - feel free to use this project for personal or commercial purposes.
 
 ---
 
-## Data Structures and Algorithms (DAA)
-
-This section explains the core DSA choices, how they support functionality, and why they were selected. It is written for clarity and academic review.
-
-### 1) LRU Cache with TTL (client API layer)
-
-- Data structure: JavaScript `Map` used as a bounded LRU cache with per‑entry TTL.
-- Purpose: Reduce repeat DB reads for hot entries (e.g., recent short‑code lookups and dashboard lists), lowering latency and cost.
-- Why `Map`: It preserves insertion order, enabling O(1) amortized eviction of the oldest (least‑recently used) key.
-- Operations (average case):
-   - get(key): O(1). If found and not expired, re‑insert to refresh recency and return value; drop if expired.
-   - set(key, value): O(1). Insert, then evict the LRU key if over capacity.
-   # Trimly — URL Shortener (Next.js)
-
-   This repository contains a Next.js app (app router) that implements a URL shortener with Supabase.
-
-   Quick setup
-
-   1. Clone and install
-
-   ```bash
-   git clone https://github.com/yuvrajsharmaaa/trimly.git
-   cd trimly
-   npm ci
-   ```
-
-   2. Create an environment file `.env.local` in the project root with your Supabase credentials:
-
-   ```
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-   3. Run locally
-
-   ```bash
-   npm run dev
-   # open http://localhost:3000
-   ```
-
-   Production
-
-   ```bash
-   npm run build
-   npm start
-   ```
-
-   Notes
-   - This project uses Next.js (not Vite). I removed an SPA-style `vercel.json` rewrite that conflicted with Next routing.
-   - If you want a Vite-based frontend, we can extract the UI into a Vite project later.
-
-   If you want, I can now tidy unused files and improve folder structure (small, safe changes).
-- Expected complexity: O(1) attempts with large keyspace; worst case bounded by N.
+**Built with ❤️ by Yuvraj Sharma**

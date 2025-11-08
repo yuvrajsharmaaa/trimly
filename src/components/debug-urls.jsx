@@ -120,7 +120,7 @@ export function DebugUrls() {
 
       {urls.length === 0 && !loading && (
         <div className="text-gray-400 text-center p-4">
-          No URLs loaded. Click "Fetch All URLs" to see what's in the database.
+          No URLs loaded. Click &quot;Fetch All URLs&quot; to see what&apos;s in the database.
         </div>
       )}
     </div>

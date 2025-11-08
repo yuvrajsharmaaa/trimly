@@ -4,6 +4,9 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Trimly - URL Shortener',
   description: 'Shorten, track, and manage your URLs with ease',
+  icons: {
+    icon: "/icon.svg",
+  },
 }
 
 export default function RootLayout({
