@@ -9,20 +9,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
-import { useState, useCallback, useMemo } from "react";
+import { useState } from "react";
 import Error from "./error";
 import * as yup from "yup";
 import { BeatLoader } from "react-spinners";
 import { createUrl } from "@/db/apiUrls";
 import QRCode from "qrcode";
+import supabase from "@/db/superbase";
 
-/**
- * Optimized CreateLink Component
- * Implements debouncing, memoization, and efficient state management
- */
 export function CreateLink() {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [formValues, setFormValues] = useState({
@@ -30,157 +26,100 @@ export function CreateLink() {
     customUrl: "",
   });
 
-  // Memoized validation schema - computed once
-  const schema = useMemo(() => yup.object().shape({
-    original_url: yup
-      .string()
-      .trim()
-      .url("Must be a valid URL")
-      .required("Long URL is required"),
-    customUrl: yup
-      .string()
-      .trim()
-      .matches(/^[a-zA-Z0-9-_]*$/, "Only letters, numbers, hyphens and underscores are allowed")
-      .min(3, "Custom URL must be at least 3 characters")
-      .max(20, "Custom URL must be less than 20 characters")
-      .nullable()
-      .transform((value) => (value === "" ? null : value)),
-  }), []);
-
-  // Optimized input change handler with useCallback
-  const handleInputChange = useCallback((e) => {
+  const handleInputChange = (e) => {
     const { id, value } = e.target;
-    setFormValues((prev) => ({
-      ...prev,
-      [id]: value || "",
-    }));
-    // Clear error when user starts typing
-    setErrors((prev) => {
-      if (!prev[id]) return prev;
-      const newErrors = { ...prev };
-      delete newErrors[id];
-      return newErrors;
+    setFormValues({
+      ...formValues,
+      [id]: value,
     });
-  }, []);
+  };
 
-  // Memoized QR code generator with error handling
-  const generateQRCode = useCallback(async (url) => {
-    try {
-      const qrDataUrl = await QRCode.toDataURL(url, {
-        width: 300,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff',
-        },
-        errorCorrectionLevel: 'M',
-      });
-      return qrDataUrl;
-    } catch (err) {
-      console.error('Error generating QR code:', err);
-      return null;
-    }
-  }, []);
-
-  // Optimized link creation with error recovery
-  const createNewLink = useCallback(async () => {
+  const createNewLink = async () => {
     setErrors({});
     setLoading(true);
-    
+
     try {
-      // Validate form data
-      const validatedData = await schema.validate(formValues, { abortEarly: false });
+      const schema = yup.object().shape({
+        original_url: yup.string().url("Must be a valid URL").required("URL is required"),
+        customUrl: yup.string(),
+      });
 
-      // Determine the short URL (custom or generated)
-      const shortUrl = validatedData.customUrl || null;
-      
-      // Generate QR code
-      const shortUrlForQR = validatedData.customUrl || 'temp';
-      const shortUrlFull = `${window.location.origin}/${shortUrlForQR}`;
-      const qrCode = await generateQRCode(shortUrlFull);
+      await schema.validate(formValues, { abortEarly: false });
 
-      // Create URL using optimized API
-      const data = await createUrl({
-        longUrl: validatedData.original_url,
-        customUrl: validatedData.customUrl,
-      }, qrCode);
+      // Create the URL first to get the actual short code
+      const data = await createUrl(
+        {
+          longUrl: formValues.original_url,
+          customUrl: formValues.customUrl,
+        },
+        null // Pass null for qrCode initially
+      );
 
-      // Close dialog and navigate
-      setFormValues({ original_url: "", customUrl: "" });
-      setOpen(false);
+      // Now generate QR code with the correct short URL
+      const actualShortCode = data.custom_url || data.short_url;
+      const qrCodeUrl = `${window.location.origin}/${actualShortCode}`;
+      const qrCode = await QRCode.toDataURL(qrCodeUrl);
+
+      // Update the URL with the QR code
+      const { error: updateError } = await supabase
+        .from("urls")
+        .update({ qr_code: qrCode })
+        .eq("id", data.id);
+
+      if (updateError) {
+        console.error("Error updating QR code:", updateError);
+      }
+
       router.push(`/link/${data.id}`);
-      
     } catch (err) {
-      console.error('Error creating link:', err);
-      
       if (err.inner) {
-        // Yup validation errors
-        const validationErrors = {};
+        const newErrors = {};
         err.inner.forEach((error) => {
-          validationErrors[error.path] = error.message;
+          newErrors[error.path] = error.message;
         });
-        setErrors(validationErrors);
+        setErrors(newErrors);
       } else {
-        setErrors({ message: err.message || 'Failed to create link' });
+        setErrors({ message: err.message });
       }
     } finally {
       setLoading(false);
     }
-  }, [formValues, schema, generateQRCode, router]);
-
-  // Memoized button disabled state
-  const isDisabled = useMemo(() => 
-    loading || !formValues.original_url.trim(), 
-    [loading, formValues.original_url]
-  );
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog>
       <DialogTrigger asChild>
         <Button variant="destructive">Create New Link</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-bold text-2xl">Create New</DialogTitle>
+          <DialogTitle>Create New</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Input
-              id="original_url"
-              placeholder="Enter your Long URL"
-              value={formValues.original_url}
-              onChange={handleInputChange}
-              className={errors.original_url ? "border-red-500" : ""}
-              autoComplete="url"
-            />
-            {errors.original_url && <Error message={errors.original_url} />}
-          </div>
-
-          <div>
-            <Input
-              id="customUrl"
-              placeholder="Custom short URL (optional)"
-              value={formValues.customUrl}
-              onChange={handleInputChange}
-              className={errors.customUrl ? "border-red-500" : ""}
-              autoComplete="off"
-            />
-            {errors.customUrl && <Error message={errors.customUrl} />}
-            <p className="text-xs text-gray-500 mt-1">
-              3-20 characters: letters, numbers, hyphens, underscores
-            </p>
-          </div>
-        </div>
-
         {errors.message && <Error message={errors.message} />}
-        
-        <DialogFooter className="sm:justify-start">
+
+        <Input
+          id="original_url"
+          placeholder="Enter your Long URL"
+          value={formValues.original_url}
+          onChange={handleInputChange}
+        />
+        {errors.original_url && <Error message={errors.original_url} />}
+
+        <Input
+          id="customUrl"
+          placeholder="Custom Link (optional)"
+          value={formValues.customUrl}
+          onChange={handleInputChange}
+        />
+        {errors.customUrl && <Error message={errors.customUrl} />}
+
+        <DialogFooter>
           <Button
             type="button"
             variant="destructive"
             onClick={createNewLink}
-            disabled={isDisabled}
+            disabled={loading}
           >
             {loading ? <BeatLoader size={10} color="white" /> : "Create"}
           </Button>

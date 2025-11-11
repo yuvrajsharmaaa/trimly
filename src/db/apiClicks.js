@@ -45,36 +45,38 @@ const parser = new UAParser();
 export const storeClicks = async ({ id, originalUrl }) => {
   try {
     const res = parser.getResult();
-    const device = res.device?.type || "desktop"; // Default to desktop if type is not detected
+    const device = res.device?.type || "desktop";
     const browser = res.browser?.name || "Unknown";
     const os = res.os?.name || "Unknown";
 
     // Get location data
-    let city = null;
-    let country = null;
+    let city = "Unknown";
+    let country = "Unknown";
     try {
       const response = await fetch("https://ipapi.co/json");
       const locationData = await response.json();
-      city = locationData.city;
-      country = locationData.country_name;
+      city = locationData.city || "Unknown";
+      country = locationData.country_name || "Unknown";
     } catch (err) {
       console.warn("Failed to fetch location data:", err);
     }
 
-    // Record the click with proper column names matching your schema
+    // Record the click with all analytics data
     const { error } = await supabase.from("clicks").insert({
-      url_id: id, // uuid
-      ip_address: null, // You can add IP tracking if needed
-      user_agent: window.navigator.userAgent,
-      referrer: document.referrer || null,
+      url_id: id,
+      city: city,
       country: country,
-      // Note: Your schema doesn't have 'city', 'device', 'browser', 'os' columns
-      // Storing in user_agent for now
+      device: device,
+      browser: browser,
+      os: os,
+      referrer: document.referrer || null,
     });
 
     if (error) {
       console.error("Error storing click:", error);
     }
+
+    console.log("Click recorded:", { city, country, device, browser, os });
   } catch (error) {
     console.error("Error recording click:", error);
   }

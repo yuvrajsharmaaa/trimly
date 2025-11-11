@@ -113,7 +113,8 @@ export default function Dashboard() {
   }, [urls, clicks])
 
   return (
-    <div className="min-h-screen w-full max-w-6xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#23232b] via-[#18181b] to-[#23232b] flex items-center justify-center py-8">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       {(loading || loadingClicks) && <BarLoader width={"100%"} color='#91939f' />}
       
       <div className="mb-6">
@@ -207,6 +208,7 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

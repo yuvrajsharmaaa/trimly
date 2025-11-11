@@ -147,17 +147,108 @@ export default function LinkDetailsPage({ params }: { params: { id: string } }) 
         <div className="space-y-6">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <BarChart className="h-6 w-6" />
-            Analytics
+            Analytics Dashboard
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <LocationStats stats={stats} />
-            <DeviceStats stats={stats} />
+
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Total Clicks</p>
+                  <p className="text-3xl font-bold text-blue-500">{stats.length}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Unique Locations</p>
+                  <p className="text-3xl font-bold text-green-500">
+                    {new Set(stats.map(s => s.city)).size}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Device Types</p>
+                  <p className="text-3xl font-bold text-purple-500">
+                    {new Set(stats.map(s => s.device)).size}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Countries</p>
+                  <p className="text-3xl font-bold text-orange-500">
+                    {new Set(stats.map(s => s.country)).size}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-gradient-to-br from-[#23232b] to-[#18181b]">
+              <CardContent className="pt-6">
+                <LocationStats stats={stats} />
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-[#23232b] to-[#18181b]">
+              <CardContent className="pt-6">
+                <DeviceStats stats={stats} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Click Log */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Clicks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Time</th>
+                      <th className="text-left p-2">Location</th>
+                      <th className="text-left p-2">Device</th>
+                      <th className="text-left p-2">Browser</th>
+                      <th className="text-left p-2">OS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.slice(0, 10).map((click, idx) => (
+                      <tr key={idx} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="p-2">
+                          {new Date(click.created_at).toLocaleString()}
+                        </td>
+                        <td className="p-2">
+                          {click.city}, {click.country}
+                        </td>
+                        <td className="p-2 capitalize">{click.device}</td>
+                        <td className="p-2">{click.browser}</td>
+                        <td className="p-2">{click.os}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       ) : (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No analytics data yet. Share your link to start tracking clicks!
+            <BarChart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-semibold mb-2">No analytics data yet</p>
+            <p>Share your link to start tracking clicks and gathering insights!</p>
           </CardContent>
         </Card>
       )}
