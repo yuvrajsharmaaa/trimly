@@ -113,9 +113,13 @@ export default function Dashboard() {
   }, [urls, clicks])
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#23232b] via-[#18181b] to-[#23232b] flex items-center justify-center py-8">
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      {(loading || loadingClicks) && <BarLoader width={"100%"} color='#91939f' />}
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#23232b] via-[#18181b] to-[#23232b] py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {(loading || loadingClicks) && (
+        <div className="mb-4">
+          <BarLoader width={"100%"} color='#91939f' />
+        </div>
+      )}
       
       <div className="mb-6">
         <DebugUrls />
@@ -175,18 +179,18 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 bg-[#18181b] py-2 px-2 sm:px-4 rounded-lg sticky top-2 z-10">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold w-full sm:w-auto text-center sm:text-left">My Links</h1>
-        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 bg-[#2a2a32] py-4 px-4 sm:px-6 rounded-xl shadow-lg">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white">My Links</h1>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-80">
             <Input
               type="text"
               placeholder="Filter Links..."
-              className="w-full pl-10"
+              className="w-full pl-10 h-11 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400"
               value={searchQuery}
               onChange={handleSearchChange}
             />
-            <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           </div>
           <CreateLink />
         </div>
